@@ -45,6 +45,8 @@
 
 ## 快速开始
 
+参考视频教程：https://www.bilibili.com/video/BV1NnkZBVE8W
+
 1) 克隆与安装依赖
 
 ```bash
