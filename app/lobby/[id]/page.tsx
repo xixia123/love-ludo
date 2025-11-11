@@ -1,5 +1,8 @@
 "use client";
 
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { type Room } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
@@ -7,18 +10,17 @@ import { getRoomById, listAvailableThemes, setMyTheme, startGame } from "../acti
 import { createClient } from "@/lib/supabase/client";
 import CopyButton from "@/components/copy-button";
 import { ArrowLeft, Users, Copy, ChevronDown } from "lucide-react";
-import { useEffect, useState } from "react";
-import { type Room } from "@/lib/db";
 
-type Props = { params: { id: string } };
-
-export default function LobbyRoomPage({ params }: Props) {
-  const { id } = params;
+export default function LobbyRoomPage() {
+  const params = useParams();
+  const id = params.id as string;
   const [room, setRoom] = useState<Room | null>(null);
   const [themes, setThemes] = useState<any[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!id) return;
+
     const fetchInitialData = async () => {
       const supabase = createClient();
       const { data: userData } = await supabase.auth.getUser();
@@ -54,6 +56,7 @@ export default function LobbyRoomPage({ params }: Props) {
       supabase.removeChannel(channel);
     };
   }, [id]);
+
 
 
   if (!room) {
