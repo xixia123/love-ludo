@@ -2,8 +2,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { listAvailableThemes, createRoom, joinRoom } from "./actions";
-import { Users, LogIn, Layers, ChevronDown, Hash, Github } from "lucide-react";
-import PreferencesModal from "@/components/profile/preferences-modal";
+import {
+  MemoizedUsers,
+  MemoizedLogIn,
+  MemoizedLayers,
+  MemoizedChevronDown,
+  MemoizedHash,
+  MemoizedGithub,
+} from "@/components/icons";
+import dynamic from 'next/dynamic';
+
+const PreferencesModal = dynamic(() => import('@/components/profile/preferences-modal'), { ssr: false });
 import Link from "next/link";
 
 export default async function LobbyPage({
@@ -35,7 +44,7 @@ export default async function LobbyPage({
             className="w-10 h-10 bg-white rounded-xl flex items-center justify-center hover:bg-white/90 transition-all"
             aria-label="GitHub 仓库"
           >
-            <Github className="w-5 h-5 text-black" />
+            <MemoizedGithub className="w-5 h-5 text-black" />
           </Link>
         </div>
 
@@ -48,7 +57,7 @@ export default async function LobbyPage({
           <div className="glass rounded-2xl p-6">
             <div className="flex items-center space-x-2 mb-3">
               <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
-                <Users className="w-5 h-5" />
+                <MemoizedUsers className="w-5 h-5" />
               </div>
               <h3 className="text-lg font-semibold">创建房间</h3>
             </div>
@@ -58,7 +67,7 @@ export default async function LobbyPage({
               <div>
                 <Label className="block text-sm text-gray-300 mb-2">选择主题</Label>
                 <div className="glass rounded-xl p-3 flex items-center space-x-2 relative">
-                  <Layers className="w-5 h-5 text-gray-400" />
+                  <MemoizedLayers className="w-5 h-5 text-gray-400" />
                   <select
                     id="player1_theme_id"
                     name="player1_theme_id"
@@ -72,7 +81,7 @@ export default async function LobbyPage({
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                  <MemoizedChevronDown className="w-4 h-4 text-gray-400" />
                 </div>
               </div>
 
@@ -88,7 +97,7 @@ export default async function LobbyPage({
           <div className="glass rounded-2xl p-6">
             <div className="flex items-center space-x-2 mb-3">
               <div className="w-8 h-8 gradient-secondary rounded-lg flex items-center justify-center">
-                <LogIn className="w-5 h-5" />
+                <MemoizedLogIn className="w-5 h-5" />
               </div>
               <h3 className="text-lg font-semibold">加入房间</h3>
             </div>
@@ -98,7 +107,7 @@ export default async function LobbyPage({
               <div>
                 <Label className="block text-sm text-gray-300 mb-2">选择主题</Label>
                 <div className="glass rounded-xl p-3 flex items-center space-x-2 relative">
-                  <Layers className="w-5 h-5 text-gray-400" />
+                  <MemoizedLayers className="w-5 h-5 text-gray-400" />
                   <select
                     id="player2_theme_id"
                     name="player2_theme_id"
@@ -112,14 +121,14 @@ export default async function LobbyPage({
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                  <MemoizedChevronDown className="w-4 h-4 text-gray-400" />
                 </div>
               </div>
 
               <div>
                 <Label className="block text-sm text-gray-300 mb-2">房间码</Label>
                 <div className="glass rounded-xl p-3 flex items-center space-x-2">
-                  <Hash className="w-5 h-5 text-gray-400" />
+                  <MemoizedHash className="w-5 h-5 text-gray-400" />
                   <Input
                     id="room_code"
                     name="room_code"
