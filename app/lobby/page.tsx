@@ -6,9 +6,14 @@ import { Users, LogIn, Layers, ChevronDown, Hash, Github } from "lucide-react";
 import PreferencesModal from "@/components/profile/preferences-modal";
 import Link from "next/link";
 
-export default async function LobbyPage({ searchParams }: { searchParams?: { error?: string } }) {
+export default async function LobbyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const { data: themes } = await listAvailableThemes();
-  const errorMessage = searchParams?.error ?? "";
+  const params = await searchParams;
+  const errorMessage = params?.error ?? "";
   return (
     <>
       {/* 首次进入首页时的偏好设置弹窗（仅登录用户，且偏好未完善时提示） */}
