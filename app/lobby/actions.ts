@@ -45,7 +45,6 @@ function generateRoomCode() {
 
 export async function listAvailableThemes(): Promise<{ data: ThemeRecord[]; error?: string }> {
   const { supabase, user } = await requireUser();
-  // 仅列出我创建的主题（不包含公开主题），避免选择他人主题导致 RLS 读不到任务
   const { data, error } = await supabase
     .from("themes")
     .select("id,title,description,task_count,created_at,creator_id")
@@ -53,71 +52,7 @@ export async function listAvailableThemes(): Promise<{ data: ThemeRecord[]; erro
     .order("created_at", { ascending: false });
   if (error) return { data: [], error: error.message };
 
-  let list = (data ?? []) as ThemeRecord[];
-  if (list.length === 0) {
-    // 首次进入大厅时进行一次兜底初始化：创建昵称档案与默认题库
-    try {
-      const { ensureProfile } = await import("@/lib/profile");
-      await ensureProfile();
-    } catch {}
-
-    try {
-      const fs = await import("node:fs/promises");
-      const path = await import("node:path");
-      const filePath = path.join(process.cwd(), "lib", "tasks.json");
-      const content = await fs.readFile(filePath, "utf-8");
-      const templates: { title: string; description?: string; tasks: string[] }[] = JSON.parse(content);
-
-      for (const tpl of templates) {
-        const { data: existing } = await supabase
-          .from("themes")
-          .select("id")
-          .eq("creator_id", user.id)
-          .eq("title", tpl.title)
-          .maybeSingle();
-        let themeId: string | null = existing?.id ?? null;
-        if (!themeId) {
-          const { data: created } = await supabase
-            .from("themes")
-            .insert({
-              title: tpl.title,
-              description: tpl.description ?? null,
-              creator_id: user.id,
-              is_public: false,
-              task_count: (tpl.tasks?.length ?? 0),
-            })
-            .select("id")
-            .single();
-          themeId = created?.id ?? null;
-        }
-        if (themeId) {
-          let index = 0;
-          for (const desc of (tpl.tasks ?? [])) {
-            await supabase
-              .from("tasks")
-              .insert({
-                theme_id: themeId,
-                description: desc,
-                type: "default",
-                order_index: index++,
-                is_ai_generated: false,
-              });
-          }
-        }
-      }
-
-      const { data: after } = await supabase
-        .from("themes")
-        .select("id,title,description,task_count,created_at,creator_id")
-        .eq("creator_id", user.id)
-        .order("created_at", { ascending: false });
-      list = (after ?? []) as ThemeRecord[];
-    } catch {
-      // 兜底初始化失败时，保持空列表并让 UI 提示
-    }
-  }
-
-  return { data: list };
+  return { data: (data ?? []) as ThemeRecord[] };
 }
 
 export async function getRoomById(id: string): Promise<{ data: RoomRecord | null; error?: string }> {

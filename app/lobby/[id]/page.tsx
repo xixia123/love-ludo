@@ -1,24 +1,60 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { getRoomById, listAvailableThemes, setMyTheme, startGame } from "../actions";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 import CopyButton from "@/components/copy-button";
-import RoomWatcher from "@/components/room-watcher";
 import { ArrowLeft, Users, Copy, ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { type Room } from "@/lib/db";
 
-type Params = { params: Promise<{ id: string }> };
+type Props = { params: { id: string } };
 
-export default async function LobbyRoomPage({ params }: Params) {
-  const { id } = await params;
-  const [{ data: room }, { data: themes }] = await Promise.all([
-    getRoomById(id),
-    listAvailableThemes(),
-  ]);
+export default function LobbyRoomPage({ params }: Props) {
+  const { id } = params;
+  const [room, setRoom] = useState<Room | null>(null);
+  const [themes, setThemes] = useState<any[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData?.user?.id ?? null;
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      const supabase = createClient();
+      const { data: userData } = await supabase.auth.getUser();
+      setUserId(userData?.user?.id ?? null);
+
+      const [{ data: roomData }, { data: themesData }] = await Promise.all([
+        getRoomById(id),
+        listAvailableThemes(),
+      ]);
+      setRoom(roomData);
+      setThemes(themesData || []);
+    };
+
+    fetchInitialData();
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`room_${id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rooms", filter: `id=eq.${id}` },
+        (payload) => {
+          const newRoom = payload.new as Room;
+          setRoom(newRoom);
+          if (newRoom.status === "playing") {
+            window.location.href = "/game";
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id]);
+
 
   if (!room) {
     return (
@@ -42,8 +78,7 @@ export default async function LobbyRoomPage({ params }: Params) {
 
   return (
     <div className="max-w-md mx-auto min-h-svh flex flex-col p-6 pb-24">
-      <RoomWatcher roomId={room.id} status={room.status} />
-
+      
       <div className="flex items-center justify-between mb-6 pt-4">
         <Link href="/lobby" className="w-10 h-10 glass rounded-xl flex items-center justify-center hover:bg-white/10 transition-all">
           <ArrowLeft className="w-5 h-5" />
