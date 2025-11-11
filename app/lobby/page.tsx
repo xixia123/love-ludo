@@ -10,7 +10,9 @@ import {
   MemoizedHash,
   MemoizedGithub,
 } from "@/components/icons";
-import DynamicPreferencesModal from "@/components/dynamic-preferences-modal";
+import dynamic from 'next/dynamic';
+
+const PreferencesModal = dynamic(() => import('@/components/profile/preferences-modal'), { ssr: false });
 import Link from "next/link";
 
 export default async function LobbyPage({
@@ -24,7 +26,7 @@ export default async function LobbyPage({
   return (
     <>
       {/* 首次进入首页时的偏好设置弹窗（仅登录用户，且偏好未完善时提示） */}
-      <DynamicPreferencesModal />
+      <PreferencesModal />
       <div className="max-w-md mx-auto min-h-svh flex flex-col p-6 pb-24">
         {/* 顶部提示小字 */}
         <p className="text-xs text-white/60 text-center mb-2">
