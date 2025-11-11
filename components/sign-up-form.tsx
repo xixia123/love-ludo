@@ -7,7 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, Shuffle } from "lucide-react";
+import {
+  MemoizedMail,
+  MemoizedLock,
+  MemoizedEye,
+  MemoizedEyeOff,
+  MemoizedShuffle,
+} from "./icons";
 
 export function SignUpForm({
   className,
@@ -88,7 +94,7 @@ export function SignUpForm({
             邮箱
           </Label>
           <div className="glass rounded-xl p-3 flex items-center space-x-2">
-            <Mail className="w-5 h-5 text-gray-400" />
+            <MemoizedMail className="w-5 h-5 text-gray-400" />
             <Input
               id="email"
               type="email"
@@ -105,7 +111,7 @@ export function SignUpForm({
             密码
           </Label>
           <div className="glass rounded-xl p-3 flex items-center space-x-2">
-            <Lock className="w-5 h-5 text-gray-400" />
+            <MemoizedLock className="w-5 h-5 text-gray-400" />
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
@@ -120,7 +126,7 @@ export function SignUpForm({
               onClick={() => setShowPassword(!showPassword)}
               className="text-gray-400 hover:text-white transition-colors"
             >
-              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              {showPassword ? <MemoizedEyeOff className="w-5 h-5" /> : <MemoizedEye className="w-5 h-5" />}
             </button>
           </div>
         </div>
