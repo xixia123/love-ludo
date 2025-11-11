@@ -34,67 +34,80 @@ export async function POST(_req: NextRequest) {
     const content = await fs.readFile(filePath, "utf-8");
     const templates: ThemeTemplate[] = JSON.parse(content);
 
-    const results: Array<{ title: string; themeId: string; task_count: number }> = [];
+    const themeTitles = templates.map((t) => t.title);
+    const { data: existingThemes, error: themesError } = await supabase
+      .from("themes")
+      .select("id, title, task_count")
+      .eq("creator_id", userId)
+      .in("title", themeTitles);
 
-    for (const tpl of templates) {
-      // 1) 查找是否已有同名主题（避免重复创建）
-      const { data: existingTheme } = await supabase
+    if (themesError) {
+      return NextResponse.json({ error: themesError.message }, { status: 500 });
+    }
+
+    const existingThemesMap = new Map(existingThemes.map((t) => [t.title, t]));
+
+    const newThemesToCreate = templates.filter((tpl) => !existingThemesMap.has(tpl.title));
+
+    let createdThemes: { id: string; title: string; }[] = [];
+    if (newThemesToCreate.length > 0) {
+      const { data, error: insertThemesErr } = await supabase
         .from("themes")
-        .select("id, task_count")
-        .eq("creator_id", userId)
-        .eq("title", tpl.title)
-        .maybeSingle();
-
-      let themeId: string | null = existingTheme?.id ?? null;
-      if (!themeId) {
-        const { data: created, error: insertThemeErr } = await supabase
-          .from("themes")
-          .insert({
+        .insert(
+          newThemesToCreate.map((tpl) => ({
             title: tpl.title,
             description: tpl.description ?? null,
             creator_id: userId,
             is_public: false,
-            task_count: (tpl.tasks?.length ?? 0),
-          })
-          .select("id")
-          .single();
-        if (insertThemeErr) {
-          return NextResponse.json({ error: insertThemeErr.message }, { status: 500 });
-        }
-        themeId = created!.id;
+            task_count: tpl.tasks?.length ?? 0,
+          }))
+        )
+        .select("id, title");
+
+      if (insertThemesErr) {
+        return NextResponse.json({ error: insertThemesErr.message }, { status: 500 });
       }
+      createdThemes = data;
+    }
 
-      // 2) 若该主题下还没有任务，则批量插入
-      const { count } = await supabase
-        .from("tasks")
-        .select("*", { count: "exact", head: true })
-        .eq("theme_id", themeId);
+    const allThemes = [...existingThemes, ...createdThemes.map(t => ({...t, task_count: 0}))];
+    const allThemesMap = new Map(allThemes.map((t) => [t.title, t]));
 
-      if ((count ?? 0) === 0) {
+    const tasksToInsert: any[] = [];
+    templates.forEach((tpl) => {
+      const theme = allThemesMap.get(tpl.title);
+      if (theme && (theme.task_count ?? 0) === 0) {
         const rows = (tpl.tasks ?? []).map((desc, idx) => ({
-          theme_id: themeId!,
+          theme_id: theme.id,
           description: desc,
           type: "interaction",
           order_index: idx,
           is_ai_generated: false,
         }));
-        if (rows.length > 0) {
-          const { error: insertTasksErr } = await supabase.from("tasks").insert(rows);
-          if (insertTasksErr) {
-            return NextResponse.json({ error: insertTasksErr.message }, { status: 500 });
-          }
-        }
+        tasksToInsert.push(...rows);
       }
+    });
 
-      // 3) 更新主题的任务数量（与实际行数一致）
-      const { count: newCount } = await supabase
-        .from("tasks")
-        .select("*", { count: "exact", head: true })
-        .eq("theme_id", themeId);
-      await supabase.from("themes").update({ task_count: newCount ?? 0 }).eq("id", themeId);
-
-      results.push({ title: tpl.title, themeId: themeId!, task_count: newCount ?? 0 });
+    if (tasksToInsert.length > 0) {
+      const { error: insertTasksErr } = await supabase.from("tasks").insert(tasksToInsert);
+      if (insertTasksErr) {
+        return NextResponse.json({ error: insertTasksErr.message }, { status: 500 });
+      }
     }
+
+    // Since we now have accurate task counts from the templates,
+    // we don't need to re-query and update the counts.
+    // The initial insert of themes already sets the correct task_count.
+
+    const results = templates.map(tpl => {
+      const theme = allThemesMap.get(tpl.title);
+      return {
+        title: tpl.title,
+        themeId: theme!.id,
+        task_count: tpl.tasks?.length ?? 0,
+      }
+    });
+
 
     return NextResponse.json({ ok: true, results });
   } catch (e: any) {
