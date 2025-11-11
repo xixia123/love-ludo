@@ -72,11 +72,7 @@ export function SignUpForm({
           console.warn("seed-default-tasks failed", await res.text());
         }
       } catch {}
-      if (isRandom) {
-        router.replace("/lobby");
-      } else {
-        router.replace("/login");
-      }
+      router.replace("/lobby");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
