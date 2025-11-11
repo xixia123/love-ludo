@@ -63,8 +63,11 @@ export default function LobbyRoomPage() {
     return (
       <div className="max-w-md mx-auto min-h-svh flex items-center justify-center p-6">
         <div className="glass rounded-2xl p-6 text-center w-full">
-          <h2 className="text-xl font-bold mb-4">正在加载房间信息...</h2>
-          <p className="text-gray-400">请稍候</p>
+          <h2 className="text-xl font-bold mb-4">房间不存在</h2>
+          <p className="text-gray-400 mb-6">无法找到该房间或无权限访问</p>
+          <Button asChild className="gradient-primary text-white">
+            <Link href="/lobby">返回大厅</Link>
+          </Button>
         </div>
       </div>
     );
